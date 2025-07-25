@@ -1,0 +1,14 @@
+# Configuração da API Key do OpenAI
+# Copie este arquivo para .env e adicione sua chave API
+
+OPENAI_API_KEY=sua_chave_api_aqui
+
+# Para obter uma chave API:
+# 1. Acesse https://platform.openai.com/api-keys
+# 2. Faça login ou crie uma conta
+# 3. Clique em "Create new secret key"
+# 4. Copie a chave gerada
+# 5. Cole no arquivo .env
+
+# Exemplo:
+# OPENAI_API_KEY=sk-proj-abc123... 

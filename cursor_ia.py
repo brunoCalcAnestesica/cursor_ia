@@ -24,15 +24,34 @@ class CursorIA:
         self.keyboard = KeyboardController()
         self.running = False
         self.command_queue = queue.Queue()
-        self.openai_client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        
+        # Inicializar OpenAI client apenas se a API key estiver disponível
+        api_key = os.getenv('OPENAI_API_KEY')
+        if api_key:
+            try:
+                self.openai_client = openai.OpenAI(api_key=api_key)
+                self.ai_enabled = True
+            except Exception as e:
+                print(f"⚠️ Erro ao inicializar OpenAI: {e}")
+                self.openai_client = None
+                self.ai_enabled = False
+        else:
+            self.openai_client = None
+            self.ai_enabled = False
         
         # Configurar reconhecimento de voz
         self.recognizer = sr.Recognizer()
         self.microphone = sr.Microphone()
         
-        # Configurar síntese de voz
-        self.engine = pyttsx3.init()
-        self.engine.setProperty('rate', 150)
+        # Configurar síntese de voz (opcional)
+        try:
+            self.engine = pyttsx3.init()
+            self.engine.setProperty('rate', 150)
+            self.voice_enabled = True
+        except Exception as e:
+            print(f"⚠️ Síntese de voz não disponível: {e}")
+            self.engine = None
+            self.voice_enabled = False
         
         # Configurar PyAutoGUI
         pyautogui.FAILSAFE = True
@@ -57,8 +76,12 @@ class CursorIA:
     def speak(self, text):
         """Sintetiza voz para o texto fornecido"""
         print(f"🤖 IA: {text}")
-        self.engine.say(text)
-        self.engine.runAndWait()
+        if self.voice_enabled and self.engine:
+            try:
+                self.engine.say(text)
+                self.engine.runAndWait()
+            except Exception as e:
+                print(f"⚠️ Erro na síntese de voz: {e}")
     
     def listen(self):
         """Escuta comandos de voz"""
@@ -281,12 +304,23 @@ class CursorIA:
             self.running = False
             self.speak("Parando o assistente")
         
+        elif command == '!!!':
+            self.running = False
+            self.speak("Comando de emergência ativado. Fechando assistente.")
+            print("🚨 COMANDO DE EMERGÊNCIA ATIVADO!")
+            print("🛑 Fechando assistente...")
+        
         else:
             # Usar IA para interpretar comandos complexos
             self.interpret_with_ai(command)
     
     def interpret_with_ai(self, command):
         """Usa OpenAI para interpretar comandos complexos"""
+        if not self.ai_enabled or not self.openai_client:
+            print(f"ℹ️ IA não disponível. Comando não reconhecido: {command}")
+            print("   Configure OPENAI_API_KEY para usar comandos inteligentes")
+            return
+        
         try:
             response = self.openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
